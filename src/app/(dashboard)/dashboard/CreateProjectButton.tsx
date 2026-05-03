@@ -52,6 +52,7 @@ export function CreateProjectButton() {
           >
             <h2 className="text-lg font-medium">Новый проект</h2>
             <TextField
+              variant="surface"
               label="Название"
               autoFocus
               required

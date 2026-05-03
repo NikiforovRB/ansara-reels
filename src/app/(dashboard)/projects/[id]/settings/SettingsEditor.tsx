@@ -16,7 +16,7 @@ import { ReelGrid } from "@/components/reels/ReelGrid";
 import type { PublicReel } from "@/components/reels/ReelCard";
 import { IconButton } from "@/components/ui/IconButton";
 import { DeviceSwitcher, type Device } from "@/components/ui/DeviceSwitcher";
-import { DeviceFrame } from "../view/ProjectViewClient";
+import { DeviceFrame } from "@/components/ui/DeviceFrame";
 import { SaveBar } from "@/components/ui/SaveBar";
 
 interface Props {
@@ -62,8 +62,8 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
     const origin =
       typeof window !== "undefined" ? window.location.origin : "https://YOUR_HOST";
     const id = `ar-embed-${slug}`;
-    return `<iframe id="${id}" src="${origin}/embed/${slug}" style="width:100%;border:0;display:block;height:0" loading="lazy" allow="autoplay; encrypted-media"></iframe>
-<script>(function(){var f=document.getElementById('${id}');window.addEventListener('message',function(e){if(!f||e.source!==f.contentWindow)return;if(e.data&&e.data.type==='ar:height')f.style.height=e.data.height+'px';});})();</script>`;
+    return `<iframe id="${id}" src="${origin}/embed/${slug}" style="width:100%;border:0;display:block;height:0" loading="lazy" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+<script>(function(){var f=document.getElementById('${id}');if(!f)return;var saved=null,htmlOverflow=null;function fullscreen(){if(saved!==null)return;saved=f.getAttribute('style')||'';htmlOverflow=document.documentElement.style.overflow;f.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;border:0;margin:0;padding:0;z-index:2147483647;background:transparent';document.documentElement.style.overflow='hidden';}function restore(){if(saved===null)return;f.setAttribute('style',saved);saved=null;document.documentElement.style.overflow=htmlOverflow||'';}window.addEventListener('message',function(e){if(!f||e.source!==f.contentWindow)return;var d=e.data||{};if(d.type==='ar:height'&&saved===null)f.style.height=d.height+'px';if(d.type==='ar:open')fullscreen();if(d.type==='ar:close')restore();});})();</script>`;
   }, [slug]);
 
   function update(patch: (prev: ProjectSettings) => ProjectSettings) {
@@ -110,13 +110,19 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
             ]}
             value={settings.reel.radius === "full" ? "full" : "num"}
             onChange={(v) =>
-              update((p) => ({
-                ...p,
-                reel: {
-                  ...p.reel,
-                  radius: v === "full" ? "full" : 16,
-                },
-              }))
+              update((p) => {
+                const switchToFull = v === "full";
+                const glow =
+                  switchToFull &&
+                  (p.border.glow === "rotate" || p.border.glow === "spin")
+                    ? "pulse"
+                    : p.border.glow;
+                return {
+                  ...p,
+                  reel: { ...p.reel, radius: switchToFull ? "full" : 16 },
+                  border: { ...p.border, glow },
+                };
+              })
             }
           />
           {settings.reel.radius !== "full" && (
@@ -221,7 +227,12 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           />
           <SelectRow
             label="Эффект свечения"
-            options={GLOW_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            options={(settings.reel.radius === "full"
+              ? GLOW_OPTIONS.filter(
+                  (o) => o.value !== "rotate" && o.value !== "spin",
+                )
+              : GLOW_OPTIONS
+            ).map((o) => ({ value: o.value, label: o.label }))}
             value={settings.border.glow}
             onChange={(v) =>
               update((p) => ({

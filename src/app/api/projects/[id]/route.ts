@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { mergeSettings } from "@/lib/settings";
+import { S3_PREFIX, deletePrefix } from "@/lib/s3";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(120).optional(),
@@ -90,6 +91,13 @@ export async function DELETE(_req: Request, { params }: Params) {
   const { id } = await params;
   if (!(await ensureOwnership(session.user.id, id))) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  // Best-effort S3 cleanup: drop the entire project folder.
+  const prefix = `${S3_PREFIX}/${session.user.id}/${id}/`;
+  try {
+    await deletePrefix(prefix);
+  } catch (err) {
+    console.error("s3 cleanup failed", err);
   }
   await prisma.project.delete({ where: { id } });
   return NextResponse.json({ ok: true });

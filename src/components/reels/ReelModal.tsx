@@ -47,6 +47,29 @@ export function ReelModal({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose, onPrev, onNext, hasPrev, hasNext]);
 
+  // When mounted inside an iframe, ask the parent to expand the iframe to
+  // full viewport so the modal covers the whole window (not just the section).
+  // Belt-and-suspenders: also attempt the HTML Fullscreen API on the iframe's
+  // document — works even when the iframe sits inside a transformed/clipped
+  // ancestor on the host site.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.parent === window) return;
+    window.parent.postMessage({ type: "ar:open" }, "*");
+    const docEl = document.documentElement as HTMLElement & {
+      requestFullscreen?: (opts?: FullscreenOptions) => Promise<void>;
+    };
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => undefined);
+    }
+    return () => {
+      window.parent.postMessage({ type: "ar:close" }, "*");
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => undefined);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const v = videoRef.current;
     setProgress(0);

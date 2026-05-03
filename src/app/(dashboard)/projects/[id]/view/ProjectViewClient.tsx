@@ -6,6 +6,7 @@ import { ReelGrid } from "@/components/reels/ReelGrid";
 import type { PublicReel } from "@/components/reels/ReelCard";
 import type { ProjectSettings } from "@/lib/settings";
 import { DeviceSwitcher, type Device } from "@/components/ui/DeviceSwitcher";
+import { DeviceFrame } from "@/components/ui/DeviceFrame";
 import { IconButton } from "@/components/ui/IconButton";
 
 interface Props {
@@ -54,22 +55,3 @@ export function ProjectViewClient({ slug, settings, reels }: Props) {
   );
 }
 
-export function DeviceFrame({
-  device,
-  children,
-}: {
-  device: Device;
-  children: React.ReactNode;
-}) {
-  if (device === "mobile") {
-    return (
-      <div
-        className="mx-auto"
-        style={{ width: 380, maxWidth: "100%", boxShadow: "0 0 0 1px #eceef2" }}
-      >
-        {children}
-      </div>
-    );
-  }
-  return <>{children}</>;
-}
