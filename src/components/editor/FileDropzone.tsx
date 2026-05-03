@@ -1,0 +1,181 @@
+"use client";
+
+import { useCallback, useRef, useState } from "react";
+import { Upload, Trash2, ImageIcon, Film } from "lucide-react";
+import { twMerge } from "tailwind-merge";
+import { IconButton } from "@/components/ui/IconButton";
+
+export type FileKind = "bg" | "hover" | "main";
+
+interface FileDropzoneProps {
+  kind: FileKind;
+  projectId: string;
+  reelId: string;
+  currentKey?: string | null;
+  currentUrl?: string | null;
+  label: string;
+  onUploaded: (data: { key: string; publicUrl: string }) => void;
+  onCleared: () => void;
+}
+
+const ACCEPT: Record<FileKind, string> = {
+  bg: "image/jpeg,image/png,image/webp",
+  hover: "video/mp4,video/webm",
+  main: "video/mp4,video/webm",
+};
+
+const MAX_LABEL: Record<FileKind, string> = {
+  bg: "JPG/PNG/WEBP до 5 МБ",
+  hover: "MP4/WEBM до 10 МБ",
+  main: "MP4/WEBM до 100 МБ",
+};
+
+export function FileDropzone({
+  kind,
+  projectId,
+  reelId,
+  currentKey,
+  currentUrl,
+  label,
+  onUploaded,
+  onCleared,
+}: FileDropzoneProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const upload = useCallback(
+    async (file: File) => {
+      setError(null);
+      setProgress(0);
+      try {
+        const presignRes = await fetch("/api/uploads/presign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId,
+            reelId,
+            kind,
+            contentType: file.type,
+            size: file.size,
+          }),
+        });
+        if (!presignRes.ok) {
+          const body = await presignRes.json().catch(() => ({}));
+          throw new Error(body?.error || "presign_failed");
+        }
+        const { uploadUrl, key, publicUrl } = (await presignRes.json()) as {
+          uploadUrl: string;
+          key: string;
+          publicUrl: string;
+        };
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", file.type);
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setProgress(Math.round((e.loaded / e.total) * 100));
+            }
+          };
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`s3_status_${xhr.status}`));
+            }
+          };
+          xhr.onerror = () => reject(new Error("s3_network_error"));
+          xhr.send(file);
+        });
+
+        setProgress(100);
+        onUploaded({ key, publicUrl });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "upload_failed");
+      } finally {
+        setTimeout(() => setProgress(null), 600);
+      }
+    },
+    [kind, projectId, reelId, onUploaded],
+  );
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || !files[0]) return;
+    void upload(files[0]);
+  };
+
+  const Icon = kind === "bg" ? ImageIcon : Film;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-[13px] text-icon">{label}</span>
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          handleFiles(e.dataTransfer.files);
+        }}
+        onClick={() => inputRef.current?.click()}
+        className={twMerge(
+          "relative cursor-pointer overflow-hidden rounded-md bg-surface aspect-[9/16] max-w-[180px]",
+          "flex items-center justify-center text-icon hover:text-iconHover transition-colors",
+        )}
+      >
+        {currentUrl && kind === "bg" && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={currentUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        {currentUrl && (kind === "hover" || kind === "main") && (
+          <video
+            src={currentUrl}
+            className="absolute inset-0 w-full h-full object-cover"
+            muted
+            playsInline
+          />
+        )}
+        {!currentUrl && (
+          <div className="flex flex-col items-center gap-2 text-center px-2">
+            <Icon size={28} strokeWidth={1.4} />
+            <span className="text-[11px]">{MAX_LABEL[kind]}</span>
+          </div>
+        )}
+        {progress !== null && (
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-icon/30">
+            <div
+              className="h-full bg-accent transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          accept={ACCEPT[kind]}
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+      </div>
+      <div className="flex items-center gap-1">
+        <IconButton
+          icon={Upload}
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+        >
+          Загрузить
+        </IconButton>
+        {currentKey && (
+          <IconButton icon={Trash2} size="sm" onClick={onCleared}>
+            Удалить
+          </IconButton>
+        )}
+      </div>
+      {error && <span className="text-xs text-red-500">{error}</span>}
+    </div>
+  );
+}
