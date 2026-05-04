@@ -99,12 +99,24 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
             }
           />
           <NumberRow
-            label="Отступы слева/справа (px)"
+            label="Отступы слева/справа на ПК (px)"
             value={settings.section.paddingX}
             min={0}
             max={200}
             onChange={(v) =>
               update((p) => ({ ...p, section: { ...p.section, paddingX: v } }))
+            }
+          />
+          <NumberRow
+            label="Отступ слева на мобильном (px)"
+            value={settings.section.mobileLeftOffset}
+            min={0}
+            max={200}
+            onChange={(v) =>
+              update((p) => ({
+                ...p,
+                section: { ...p.section, mobileLeftOffset: v },
+              }))
             }
           />
         </Section>

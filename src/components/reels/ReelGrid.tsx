@@ -168,14 +168,23 @@ export function ReelGrid({
   const sectionStyle = useMemo<React.CSSProperties>(
     () => ({
       backgroundColor: settings.section.bgColor,
-      paddingLeft: `${settings.section.paddingX}px`,
-      paddingRight: `${settings.section.paddingX}px`,
+      // On mobile reels go edge-to-edge: no section padding on sides at all.
+      paddingLeft: isMobile ? 0 : `${settings.section.paddingX}px`,
+      paddingRight: isMobile ? 0 : `${settings.section.paddingX}px`,
     }),
-    [settings.section],
+    [settings.section, isMobile],
   );
 
-  const gridStyle = useMemo<React.CSSProperties>(
-    () => ({
+  const gridStyle = useMemo<React.CSSProperties>(() => {
+    // On mobile reels go edge-to-edge. We only add a one-time left offset for
+    // the first reel (it scrolls out of view together with the content as the
+    // user swipes right, so the right side stays flush with the screen edge).
+    // `overhang` reserves the room necessary for the glow border so the
+    // border itself isn't clipped on either side.
+    const leftPad = isMobile
+      ? settings.section.mobileLeftOffset + overhang
+      : overhang;
+    return {
       maxWidth: `${settings.section.gridMaxWidth}px`,
       margin: "0 auto",
       display: "flex",
@@ -188,11 +197,18 @@ export function ReelGrid({
       overflowX: settings.layout === "single-row" ? "auto" : "visible",
       paddingTop: `${16 + overhang}px`,
       paddingBottom: `${16 + overhang}px`,
-      paddingLeft: `${overhang}px`,
+      paddingLeft: `${leftPad}px`,
       paddingRight: `${overhang}px`,
-    }),
-    [settings.layout, settings.section.gridMaxWidth, overhang, gap, settings.align],
-  );
+    };
+  }, [
+    settings.layout,
+    settings.section.gridMaxWidth,
+    settings.section.mobileLeftOffset,
+    overhang,
+    gap,
+    settings.align,
+    isMobile,
+  ]);
 
   async function trackView(reelId: string) {
     if (!enableTracking) return;

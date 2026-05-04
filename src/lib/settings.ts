@@ -33,6 +33,7 @@ export interface ProjectSettings {
     bgColor: string;
     gridMaxWidth: number;
     paddingX: number;
+    mobileLeftOffset: number;
   };
   reel: {
     radius: Radius;
@@ -87,6 +88,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
     bgColor: "#ffffff",
     gridMaxWidth: 1200,
     paddingX: 24,
+    mobileLeftOffset: 16,
   },
   reel: {
     radius: 16,
