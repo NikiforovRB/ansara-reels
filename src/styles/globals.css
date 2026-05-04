@@ -95,6 +95,16 @@ select:focus {
   outline: none;
 }
 
+/* iOS Safari auto-zooms inputs with font-size < 16px on focus.
+   Force >=16px on small screens to prevent the unwanted zoom. */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 /* Bare reset for dialogs */
 dialog::backdrop {
   background: rgba(15, 17, 21, 0.55);

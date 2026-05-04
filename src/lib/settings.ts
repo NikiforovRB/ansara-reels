@@ -25,6 +25,8 @@ export interface ButtonSettings {
 }
 
 export type GlowDirection = "cw" | "ccw";
+export type GridAlign = "left" | "center";
+export type HoverPreview = "image" | "video";
 
 export interface ProjectSettings {
   section: {
@@ -63,6 +65,8 @@ export interface ProjectSettings {
   };
   layout: LayoutMode;
   gap: { desktop: number; mobile: number };
+  align: GridAlign;
+  hoverPreview: HoverPreview;
   defaultButton: ButtonSettings;
 }
 
@@ -115,6 +119,8 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   },
   layout: "wrap",
   gap: { desktop: 16, mobile: 12 },
+  align: "left",
+  hoverPreview: "image",
   defaultButton: DEFAULT_BUTTON,
 };
 
@@ -142,6 +148,8 @@ export function mergeSettings(base: unknown): ProjectSettings {
       ...DEFAULT_SETTINGS.gap,
       ...(incoming.gap ?? {}),
     },
+    align: incoming.align ?? DEFAULT_SETTINGS.align,
+    hoverPreview: incoming.hoverPreview ?? DEFAULT_SETTINGS.hoverPreview,
     defaultButton: {
       ...DEFAULT_SETTINGS.defaultButton,
       ...(incoming.defaultButton ?? {}),

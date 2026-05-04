@@ -76,13 +76,17 @@ export function ReelGrid({
       display: "flex",
       flexWrap: settings.layout === "single-row" ? "nowrap" : "wrap",
       gap: `${gap}px`,
+      // `safe center` falls back to `flex-start` when items overflow,
+      // so the very first reel stays visible on narrow screens.
+      justifyContent:
+        settings.align === "center" ? "safe center" : "flex-start",
       overflowX: settings.layout === "single-row" ? "auto" : "visible",
       paddingTop: `${16 + overhang}px`,
       paddingBottom: `${16 + overhang}px`,
       paddingLeft: `${overhang}px`,
       paddingRight: `${overhang}px`,
     }),
-    [settings.layout, settings.section.gridMaxWidth, overhang, gap],
+    [settings.layout, settings.section.gridMaxWidth, overhang, gap, settings.align],
   );
 
   async function trackView(reelId: string) {
@@ -146,6 +150,7 @@ export function ReelGrid({
             reel={reel}
             unread={!seen[reel.id]}
             forceMobile={forceMobile}
+            alwaysPlayHover={settings.hoverPreview === "video"}
             onOpen={() => open(index)}
           />
         ))}

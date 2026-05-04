@@ -41,17 +41,21 @@ export async function fallbackViewerHash(projectId: string): Promise<string> {
 }
 
 export function viewerCookieHeader(value: string): string {
-  // Partitioned (CHIPS) for cross-site iframes; SameSite=None requires Secure.
-  // In local dev over http we drop the Secure/Partitioned attributes so the cookie still sticks.
-  const secure = process.env.NODE_ENV === "production";
+  // Production: SameSite=None + Secure + Partitioned (CHIPS) so the cookie
+  // sticks inside cross-site iframes. Development (HTTP localhost): browsers
+  // reject SameSite=None without Secure, so fall back to Lax — same-origin
+  // testing still works and the viewer hash persists across requests.
+  const isHttps = process.env.NODE_ENV === "production";
   const parts = [
     `${COOKIE_NAME}=${value}`,
     "Path=/",
     `Max-Age=${COOKIE_MAX_AGE}`,
-    "SameSite=None",
+    "HttpOnly",
   ];
-  if (secure) {
-    parts.push("Secure", "Partitioned");
+  if (isHttps) {
+    parts.push("SameSite=None", "Secure", "Partitioned");
+  } else {
+    parts.push("SameSite=Lax");
   }
   return parts.join("; ");
 }

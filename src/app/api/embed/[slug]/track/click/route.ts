@@ -61,9 +61,14 @@ export async function POST(req: Request, { params }: Params) {
     viewerHash = await fallbackViewerHash(project.id);
   }
 
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
   await prisma.reelClick.upsert({
-    where: { reelId_viewerHash: { reelId: reel.id, viewerHash } },
-    create: { reelId: reel.id, viewerHash },
+    where: {
+      reelId_viewerHash_day: { reelId: reel.id, viewerHash, day: today },
+    },
+    create: { reelId: reel.id, viewerHash, day: today },
     update: {},
   });
 

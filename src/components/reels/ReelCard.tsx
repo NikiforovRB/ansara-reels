@@ -19,9 +19,17 @@ interface Props {
   unread: boolean;
   onOpen: () => void;
   forceMobile?: boolean;
+  alwaysPlayHover?: boolean;
 }
 
-export function ReelCard({ settings, reel, unread, onOpen, forceMobile }: Props) {
+export function ReelCard({
+  settings,
+  reel,
+  unread,
+  onOpen,
+  forceMobile,
+  alwaysPlayHover = false,
+}: Props) {
   const [hover, setHover] = useState(false);
   const [vpMobile, setVpMobile] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -35,17 +43,18 @@ export function ReelCard({ settings, reel, unread, onOpen, forceMobile }: Props)
   }, []);
 
   const isMobile = forceMobile ?? vpMobile;
+  const playing = alwaysPlayHover || (hover && !isMobile);
 
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
-    if (hover && reel.hoverVideoUrl) {
-      el.currentTime = 0;
+    if (playing && reel.hoverVideoUrl) {
+      el.muted = true;
       el.play().catch(() => undefined);
-    } else {
+    } else if (!alwaysPlayHover) {
       el.pause();
     }
-  }, [hover, reel.hoverVideoUrl]);
+  }, [playing, alwaysPlayHover, reel.hoverVideoUrl]);
 
   const isFull = settings.reel.radius === "full";
   const sizes = isMobile ? settings.reel.mobile : settings.reel.desktop;
@@ -128,14 +137,15 @@ export function ReelCard({ settings, reel, unread, onOpen, forceMobile }: Props)
               muted
               playsInline
               loop
-              preload="metadata"
+              autoPlay={alwaysPlayHover}
+              preload={alwaysPlayHover ? "auto" : "metadata"}
               style={{
                 position: "absolute",
                 inset: 0,
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                opacity: hover && !isMobile ? 1 : 0,
+                opacity: playing ? 1 : 0,
                 transition: "opacity 200ms",
               }}
             />

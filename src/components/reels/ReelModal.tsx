@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Volume2, VolumeX, X } from "lucide-react";
 import type { ProjectSettings } from "@/lib/settings";
 import type { PublicReel } from "./ReelCard";
 
@@ -33,6 +33,7 @@ export function ReelModal({
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [progress, setProgress] = useState(0);
+  const [muted, setMuted] = useState(false);
 
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < total - 1;
@@ -48,25 +49,13 @@ export function ReelModal({
   }, [onClose, onPrev, onNext, hasPrev, hasNext]);
 
   // When mounted inside an iframe, ask the parent to expand the iframe to
-  // full viewport so the modal covers the whole window (not just the section).
-  // Belt-and-suspenders: also attempt the HTML Fullscreen API on the iframe's
-  // document — works even when the iframe sits inside a transformed/clipped
-  // ancestor on the host site.
+  // cover the whole browser window (no OS fullscreen, just CSS).
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.parent === window) return;
     window.parent.postMessage({ type: "ar:open" }, "*");
-    const docEl = document.documentElement as HTMLElement & {
-      requestFullscreen?: (opts?: FullscreenOptions) => Promise<void>;
-    };
-    if (docEl.requestFullscreen) {
-      docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => undefined);
-    }
     return () => {
       window.parent.postMessage({ type: "ar:close" }, "*");
-      if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen().catch(() => undefined);
-      }
     };
   }, []);
 
@@ -75,8 +64,25 @@ export function ReelModal({
     setProgress(0);
     if (!v) return;
     v.currentTime = 0;
-    v.play().catch(() => undefined);
-  }, [reel.id]);
+    v.muted = muted;
+    v.volume = 1;
+    v.play().catch(() => {
+      // Browser blocked unmuted autoplay — fall back to muted.
+      v.muted = true;
+      setMuted(true);
+      v.play().catch(() => undefined);
+    });
+  }, [reel.id, muted]);
+
+  function toggleMute() {
+    const v = videoRef.current;
+    const next = !muted;
+    setMuted(next);
+    if (v) {
+      v.muted = next;
+      if (!next) v.play().catch(() => undefined);
+    }
+  }
 
   function handleTimeUpdate() {
     const v = videoRef.current;
@@ -136,6 +142,33 @@ export function ReelModal({
           }}
         >
           <X size={24} strokeWidth={1.6} />
+        </button>
+
+        {/* Mute toggle: outside top-left of video */}
+        <button
+          type="button"
+          aria-label={muted ? "Включить звук" : "Выключить звук"}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleMute();
+          }}
+          className="text-white/80 hover:text-white transition-colors"
+          style={{
+            position: "absolute",
+            top: -36,
+            left: -36,
+            width: 32,
+            height: 32,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {muted ? (
+            <VolumeX size={22} strokeWidth={1.6} />
+          ) : (
+            <Volume2 size={22} strokeWidth={1.6} />
+          )}
         </button>
 
         <div

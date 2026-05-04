@@ -6,6 +6,8 @@ import {
   type ProjectSettings,
   type GlowEffect,
   type GlowDirection,
+  type GridAlign,
+  type HoverPreview,
   type TitlePosition,
   type TitleAlign,
   type LayoutMode,
@@ -18,6 +20,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { DeviceSwitcher, type Device } from "@/components/ui/DeviceSwitcher";
 import { DeviceFrame } from "@/components/ui/DeviceFrame";
 import { SaveBar } from "@/components/ui/SaveBar";
+import { NumberStepper } from "@/components/ui/NumberStepper";
 
 interface Props {
   projectId: string;
@@ -70,10 +73,15 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
     setSettings(patch);
   }
 
+  const isRect = settings.reel.radius !== "full";
+  const glowOptions = isRect
+    ? GLOW_OPTIONS.filter((o) => o.value !== "rotate" && o.value !== "spin")
+    : GLOW_OPTIONS;
+
   return (
     <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 max-w-7xl mx-auto">
       <div className="flex flex-col gap-6">
-        <Section title="9. Цвет фона секции, размер Grid">
+        <Section title="Цвет фона секции, размер Grid">
           <ColorRow
             label="Цвет фона секции"
             value={settings.section.bgColor}
@@ -101,25 +109,25 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           />
         </Section>
 
-        <Section title="14. Размеры рилса">
+        <Section title="Размеры рилса">
           <SegmentedRow
             label="Скругление"
             options={[
-              { value: "num", label: "Px" },
-              { value: "full", label: "Полное" },
+              { value: "num", label: "Прямоугольник" },
+              { value: "full", label: "Круг" },
             ]}
             value={settings.reel.radius === "full" ? "full" : "num"}
             onChange={(v) =>
               update((p) => {
-                const switchToFull = v === "full";
+                const switchToRect = v === "num";
                 const glow =
-                  switchToFull &&
+                  switchToRect &&
                   (p.border.glow === "rotate" || p.border.glow === "spin")
                     ? "pulse"
                     : p.border.glow;
                 return {
                   ...p,
-                  reel: { ...p.reel, radius: switchToFull ? "full" : 16 },
+                  reel: { ...p.reel, radius: switchToRect ? 16 : "full" },
                   border: { ...p.border, glow },
                 };
               })
@@ -192,7 +200,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           </div>
         </Section>
 
-        <Section title="4-7. Обводка и свечение">
+        <Section title="Обводка и свечение">
           <NumberRow
             label="Отступ до обводки (px)"
             value={settings.border.gap}
@@ -227,12 +235,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           />
           <SelectRow
             label="Эффект свечения"
-            options={(settings.reel.radius === "full"
-              ? GLOW_OPTIONS.filter(
-                  (o) => o.value !== "rotate" && o.value !== "spin",
-                )
-              : GLOW_OPTIONS
-            ).map((o) => ({ value: o.value, label: o.label }))}
+            options={glowOptions.map((o) => ({ value: o.value, label: o.label }))}
             value={settings.border.glow}
             onChange={(v) =>
               update((p) => ({
@@ -241,48 +244,48 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
               }))
             }
           />
-          {(settings.border.glow === "rotate" ||
-            settings.border.glow === "spin" ||
-            settings.border.glow === "shimmer") && (
-            <>
-              <ColorRow
-                label="Второй цвет градиента"
-                value={settings.border.glowSecondColor}
-                onChange={(v) =>
-                  update((p) => ({
-                    ...p,
-                    border: { ...p.border, glowSecondColor: v },
-                  }))
-                }
-              />
-              <SegmentedRow
-                label="Направление"
-                options={[
-                  { value: "cw", label: "По часовой" },
-                  { value: "ccw", label: "Против часовой" },
-                ]}
-                value={settings.border.glowDirection}
-                onChange={(v) =>
-                  update((p) => ({
-                    ...p,
-                    border: { ...p.border, glowDirection: v as GlowDirection },
-                  }))
-                }
-              />
-              <NumberRow
-                label="Скорость (сек на оборот)"
-                value={settings.border.glowDurationSec}
-                min={1}
-                max={60}
-                onChange={(v) =>
-                  update((p) => ({
-                    ...p,
-                    border: { ...p.border, glowDurationSec: v },
-                  }))
-                }
-              />
-            </>
-          )}
+          {settings.border.glow !== "none" &&
+            settings.border.glow !== "pulse" &&
+            settings.border.glow !== "breathe" && (
+              <>
+                <ColorRow
+                  label="Второй цвет градиента"
+                  value={settings.border.glowSecondColor}
+                  onChange={(v) =>
+                    update((p) => ({
+                      ...p,
+                      border: { ...p.border, glowSecondColor: v },
+                    }))
+                  }
+                />
+                <SegmentedRow
+                  label="Направление"
+                  options={[
+                    { value: "cw", label: "По часовой" },
+                    { value: "ccw", label: "Против часовой" },
+                  ]}
+                  value={settings.border.glowDirection}
+                  onChange={(v) =>
+                    update((p) => ({
+                      ...p,
+                      border: { ...p.border, glowDirection: v as GlowDirection },
+                    }))
+                  }
+                />
+                <NumberRow
+                  label="Скорость (сек на оборот)"
+                  value={settings.border.glowDurationSec}
+                  min={1}
+                  max={60}
+                  onChange={(v) =>
+                    update((p) => ({
+                      ...p,
+                      border: { ...p.border, glowDurationSec: v },
+                    }))
+                  }
+                />
+              </>
+            )}
         </Section>
 
         <Section title="Просмотр рилса (модалка)">
@@ -300,7 +303,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           />
         </Section>
 
-        <Section title="8. Заголовок под рилсом">
+        <Section title="Заголовок под рилсом">
           <NumberRow
             label="Размер текста (desktop, px)"
             value={settings.title.sizeDesktop}
@@ -350,7 +353,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           />
         </Section>
 
-        <Section title="12. Расположение текста">
+        <Section title="Расположение текста">
           <SegmentedRow
             label="Положение текста"
             options={[
@@ -378,7 +381,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           )}
         </Section>
 
-        <Section title="13. Расположение рилсов">
+        <Section title="Расположение рилсов">
           <SegmentedRow
             label="Layout"
             options={[
@@ -388,6 +391,17 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
             value={settings.layout}
             onChange={(v) =>
               update((p) => ({ ...p, layout: v as LayoutMode }))
+            }
+          />
+          <SegmentedRow
+            label="Выравнивание всех сторис"
+            options={[
+              { value: "left", label: "По левому краю" },
+              { value: "center", label: "По центру" },
+            ]}
+            value={settings.align}
+            onChange={(v) =>
+              update((p) => ({ ...p, align: v as GridAlign }))
             }
           />
         </Section>
@@ -411,6 +425,23 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
               update((p) => ({ ...p, gap: { ...p.gap, mobile: v } }))
             }
           />
+        </Section>
+
+        <Section title="Превью на карточке">
+          <SegmentedRow
+            label="Что показывать"
+            options={[
+              { value: "image", label: "Изображение" },
+              { value: "video", label: "Видео при наведении" },
+            ]}
+            value={settings.hoverPreview}
+            onChange={(v) =>
+              update((p) => ({ ...p, hoverPreview: v as HoverPreview }))
+            }
+          />
+          <p className="text-[12px] text-icon">
+            «Изображение» — фон-картинка, видео при наведении мышкой. «Видео при наведении» — все рилсы сразу проигрывают hover-видео без звука.
+          </p>
         </Section>
 
         <Section title="Кнопка по умолчанию">
@@ -489,7 +520,6 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
             {copied ? "Скопировано" : "Скопировать"}
           </IconButton>
         </Section>
-
       </div>
 
       <div className="sticky top-4 self-start">
@@ -549,19 +579,10 @@ function NumberRow({
   onChange: (v: number) => void;
 }) {
   return (
-    <label className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-3">
       <span className="text-[13px] text-icon">{label}</span>
-      <input
-        type="number"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) =>
-          onChange(Math.max(min, Math.min(max, Number(e.target.value) || min)))
-        }
-        className="h-8 px-2 rounded-md bg-white text-[13px] w-24 text-right"
-      />
-    </label>
+      <NumberStepper value={value} min={min} max={max} onChange={onChange} />
+    </div>
   );
 }
 

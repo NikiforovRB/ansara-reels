@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Ansara Reels",
   description: "Embeddable reels for any website.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

@@ -57,11 +57,12 @@ model ReelView {
   id           String   @id @default(cuid())
   reelId       String
   viewerHash   String
+  day          DateTime @db.Date
   firstSeenAt  DateTime @default(now())
 
   reel         Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
 
-  @@unique([reelId, viewerHash])
+  @@unique([reelId, viewerHash, day])
   @@index([reelId, firstSeenAt])
 }
 
@@ -69,10 +70,11 @@ model ReelClick {
   id           String   @id @default(cuid())
   reelId       String
   viewerHash   String
+  day          DateTime @db.Date
   firstSeenAt  DateTime @default(now())
 
   reel         Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
 
-  @@unique([reelId, viewerHash])
+  @@unique([reelId, viewerHash, day])
   @@index([reelId, firstSeenAt])
 }

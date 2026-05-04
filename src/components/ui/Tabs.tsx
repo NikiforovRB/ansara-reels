@@ -33,7 +33,7 @@ interface TabsProps {
 export function Tabs({ tabs }: TabsProps) {
   const pathname = usePathname();
   return (
-    <nav className="flex items-center gap-1 px-6 h-12">
+    <nav className="flex flex-wrap items-center gap-1 px-6 py-1.5 min-h-12">
       {tabs.map(({ href, label, icon }) => {
         const Icon = ICONS[icon];
         const active = pathname === href || pathname.startsWith(`${href}/`);

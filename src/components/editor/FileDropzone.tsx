@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Trash2, ImageIcon, Film } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { IconButton } from "@/components/ui/IconButton";
@@ -30,6 +30,77 @@ const MAX_LABEL: Record<FileKind, string> = {
   main: "MP4/WEBM до 100 МБ",
 };
 
+interface MediaInfo {
+  width: number;
+  height: number;
+  sizeBytes: number | null;
+  durationSec?: number;
+}
+
+function formatBytes(n: number | null): string {
+  if (n === null || n === undefined) return "";
+  if (n < 1024) return `${n} Б`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} КБ`;
+  return `${(n / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+function formatDuration(sec?: number): string {
+  if (!sec || !isFinite(sec)) return "";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function describeMeta(kind: FileKind, meta: MediaInfo | null): string {
+  if (!meta) return "";
+  const parts: string[] = [`${meta.width}×${meta.height}`];
+  if (kind !== "bg" && meta.durationSec) {
+    parts.push(formatDuration(meta.durationSec));
+  }
+  if (meta.sizeBytes !== null) {
+    parts.push(formatBytes(meta.sizeBytes));
+  }
+  return parts.join(" · ");
+}
+
+async function probeImage(src: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => reject(new Error("img_load_failed"));
+    img.src = src;
+  });
+}
+
+async function probeVideo(
+  src: string,
+): Promise<{ width: number; height: number; durationSec: number }> {
+  return new Promise((resolve, reject) => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.onloadedmetadata = () => {
+      resolve({
+        width: v.videoWidth,
+        height: v.videoHeight,
+        durationSec: v.duration,
+      });
+    };
+    v.onerror = () => reject(new Error("video_load_failed"));
+    v.src = src;
+  });
+}
+
+async function fetchSize(url: string): Promise<number | null> {
+  try {
+    const res = await fetch(url, { method: "HEAD" });
+    const len = res.headers.get("content-length");
+    return len ? Number(len) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function FileDropzone({
   kind,
   projectId,
@@ -43,11 +114,68 @@ export function FileDropzone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [meta, setMeta] = useState<MediaInfo | null>(null);
+
+  // Probe metadata when currentUrl changes (e.g. on initial mount).
+  useEffect(() => {
+    let cancelled = false;
+    setMeta(null);
+    if (!currentUrl) return;
+    (async () => {
+      try {
+        const sizePromise = fetchSize(currentUrl);
+        if (kind === "bg") {
+          const dim = await probeImage(currentUrl);
+          if (cancelled) return;
+          const sizeBytes = await sizePromise;
+          if (cancelled) return;
+          setMeta({ ...dim, sizeBytes });
+        } else {
+          const v = await probeVideo(currentUrl);
+          if (cancelled) return;
+          const sizeBytes = await sizePromise;
+          if (cancelled) return;
+          setMeta({
+            width: v.width,
+            height: v.height,
+            durationSec: v.durationSec,
+            sizeBytes,
+          });
+        }
+      } catch {
+        // ignore probe failures
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUrl, kind]);
 
   const upload = useCallback(
     async (file: File) => {
       setError(null);
       setProgress(0);
+      // Probe local file first (gives instant feedback even before upload)
+      try {
+        const localUrl = URL.createObjectURL(file);
+        if (kind === "bg") {
+          const dim = await probeImage(localUrl);
+          setMeta({ ...dim, sizeBytes: file.size });
+        } else {
+          const v = await probeVideo(localUrl);
+          setMeta({
+            width: v.width,
+            height: v.height,
+            durationSec: v.durationSec,
+            sizeBytes: file.size,
+          });
+        }
+        URL.revokeObjectURL(localUrl);
+      } catch {
+        // Fall back to size-only if probing fails
+        setMeta({ width: 0, height: 0, sizeBytes: file.size });
+      }
+
       try {
         const presignRes = await fetch("/api/uploads/presign", {
           method: "POST",
@@ -107,6 +235,7 @@ export function FileDropzone({
   };
 
   const Icon = kind === "bg" ? ImageIcon : Film;
+  const metaText = describeMeta(kind, meta);
 
   return (
     <div className="flex flex-col gap-2">
@@ -161,6 +290,11 @@ export function FileDropzone({
           onChange={(e) => handleFiles(e.target.files)}
         />
       </div>
+      {metaText && (
+        <span className="text-[11px] text-icon truncate" title={metaText}>
+          {metaText}
+        </span>
+      )}
       <div className="flex items-center gap-1">
         <IconButton
           icon={Upload}

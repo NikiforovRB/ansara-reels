@@ -202,13 +202,13 @@ export function ContentEditor({ projectId, initialReels, defaultButton }: Props)
               key={reel.id}
               className="bg-surface rounded-lg p-4 flex flex-col gap-4"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 {isCollapsed ? (
                   <CollapsedHeader reel={reel} index={index} />
                 ) : (
                   <span className="text-icon text-sm">Рилс #{index + 1}</span>
                 )}
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0 flex-wrap">
                   {isCollapsed ? (
                     <IconButton
                       icon={Pencil}
