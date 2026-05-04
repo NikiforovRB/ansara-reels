@@ -79,7 +79,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
     : GLOW_OPTIONS;
 
   return (
-    <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 max-w-7xl mx-auto">
+    <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8">
       <div className="flex flex-col gap-6">
         <Section title="Цвет фона секции, размер Grid">
           <ColorRow
