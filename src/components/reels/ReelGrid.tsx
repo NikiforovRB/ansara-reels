@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ReelCard, type PublicReel } from "./ReelCard";
 import { ReelModal } from "./ReelModal";
 import type { ProjectSettings } from "@/lib/settings";
@@ -23,6 +23,7 @@ export function ReelGrid({
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [seen, setSeen] = useState<Record<string, boolean>>({});
   const [vpMobile, setVpMobile] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -59,6 +60,110 @@ export function ReelGrid({
 
   const overhang = settings.border.gap + settings.border.width;
   const gap = isMobile ? settings.gap.mobile : settings.gap.desktop;
+
+  const scrollByOneCard = useCallback(
+    (direction: 1 | -1) => {
+      const el = gridRef.current;
+      if (!el) return;
+      const firstCard = el.firstElementChild as HTMLElement | null;
+      const cardWidth = firstCard ? firstCard.offsetWidth : 200;
+      el.scrollBy({ left: direction * (cardWidth + gap), behavior: "smooth" });
+    },
+    [gap],
+  );
+
+  // Listen for postMessage from host page to navigate via .reels-left / .reels-right buttons.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onMessage = (e: MessageEvent) => {
+      const data = e.data as { type?: string; direction?: string } | undefined;
+      if (!data || data.type !== "ar:nav") return;
+      scrollByOneCard(data.direction === "left" ? -1 : 1);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [scrollByOneCard]);
+
+  // Same-page support: also react to clicks on .reels-left / .reels-right
+  // when they are inside the iframe document itself.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const btn = target.closest(".reels-left, .reels-right") as HTMLElement | null;
+      if (!btn) return;
+      e.preventDefault();
+      scrollByOneCard(btn.classList.contains("reels-left") ? -1 : 1);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [scrollByOneCard]);
+
+  // Drag-to-scroll on desktop when the row overflows.
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    if (isMobile) return;
+    if (settings.layout !== "single-row") return;
+
+    const updateCursor = () => {
+      const overflows = el.scrollWidth > el.clientWidth + 1;
+      el.style.cursor = overflows ? "grab" : "";
+    };
+    updateCursor();
+    const ro = new ResizeObserver(updateCursor);
+    ro.observe(el);
+
+    let isDown = false;
+    let startX = 0;
+    let startScroll = 0;
+    let moved = false;
+
+    const onDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+      isDown = true;
+      moved = false;
+      startX = e.clientX;
+      startScroll = el.scrollLeft;
+      el.style.cursor = "grabbing";
+      el.style.userSelect = "none";
+      e.preventDefault();
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!isDown) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 3) moved = true;
+      el.scrollLeft = startScroll - dx;
+    };
+    const endDrag = () => {
+      if (!isDown) return;
+      isDown = false;
+      el.style.userSelect = "";
+      updateCursor();
+    };
+    const onClickCapture = (e: MouseEvent) => {
+      if (moved) {
+        e.stopPropagation();
+        e.preventDefault();
+        moved = false;
+      }
+    };
+
+    el.addEventListener("mousedown", onDown);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", endDrag);
+    el.addEventListener("click", onClickCapture, true);
+
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("mousedown", onDown);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", endDrag);
+      el.removeEventListener("click", onClickCapture, true);
+    };
+  }, [isMobile, settings.layout, reels.length]);
 
   const sectionStyle = useMemo<React.CSSProperties>(
     () => ({
@@ -142,7 +247,7 @@ export function ReelGrid({
 
   return (
     <section style={sectionStyle} className="w-full">
-      <div style={gridStyle} className="no-scrollbar">
+      <div ref={gridRef} style={gridStyle} className="no-scrollbar">
         {reels.map((reel, index) => (
           <ReelCard
             key={reel.id}

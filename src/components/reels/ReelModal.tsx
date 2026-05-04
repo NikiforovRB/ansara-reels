@@ -34,9 +34,19 @@ export function ReelModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [progress, setProgress] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < total - 1;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 600px)");
+    const update = () => setIsMobile(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -108,43 +118,100 @@ export function ReelModal({
 
   const opacity = Math.max(0, Math.min(100, settings.modal.backdropOpacity)) / 100;
 
+  const frameStyle: React.CSSProperties = isMobile
+    ? {
+        width: "100vw",
+        height: "100vh",
+        background: "transparent",
+        position: "relative",
+      }
+    : {
+        width: "min(540px, 92vw)",
+        aspectRatio: "9 / 16",
+        maxHeight: "92vh",
+        background: "transparent",
+        position: "relative",
+      };
+
+  const videoBoxStyle: React.CSSProperties = isMobile
+    ? {
+        position: "absolute",
+        inset: 0,
+        borderRadius: 0,
+        overflow: "hidden",
+        background: "#000",
+      }
+    : {
+        position: "absolute",
+        inset: 0,
+        borderRadius: 16,
+        overflow: "hidden",
+        background: "#000",
+      };
+
+  const closeBtnStyle: React.CSSProperties = isMobile
+    ? {
+        position: "absolute",
+        top: 25,
+        right: 25,
+        width: 32,
+        height: 32,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+      }
+    : {
+        position: "absolute",
+        top: -36,
+        right: -36,
+        width: 32,
+        height: 32,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      };
+
+  const muteBtnStyle: React.CSSProperties = isMobile
+    ? {
+        position: "absolute",
+        top: 25,
+        left: 25,
+        width: 32,
+        height: 32,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+      }
+    : {
+        position: "absolute",
+        top: -36,
+        left: -36,
+        width: 32,
+        height: 32,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      };
+
   return (
     <div
       className="fixed inset-0 z-[1000] flex items-center justify-center"
       style={{ background: `rgba(0, 0, 0, ${opacity})` }}
       onClick={onClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "min(420px, 92vw)",
-          aspectRatio: "9 / 16",
-          maxHeight: "85vh",
-          background: "transparent",
-          position: "relative",
-        }}
-      >
-        {/* Close button: outside top-right of video, 20px right + 20px up */}
+      <div onClick={(e) => e.stopPropagation()} style={frameStyle}>
         <button
           type="button"
           aria-label="Закрыть"
           onClick={onClose}
           className="text-white/80 hover:text-white transition-colors"
-          style={{
-            position: "absolute",
-            top: -36,
-            right: -36,
-            width: 32,
-            height: 32,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          style={closeBtnStyle}
         >
           <X size={24} strokeWidth={1.6} />
         </button>
 
-        {/* Mute toggle: outside top-left of video */}
         <button
           type="button"
           aria-label={muted ? "Включить звук" : "Выключить звук"}
@@ -153,16 +220,7 @@ export function ReelModal({
             toggleMute();
           }}
           className="text-white/80 hover:text-white transition-colors"
-          style={{
-            position: "absolute",
-            top: -36,
-            left: -36,
-            width: 32,
-            height: 32,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          style={muteBtnStyle}
         >
           {muted ? (
             <VolumeX size={22} strokeWidth={1.6} />
@@ -171,15 +229,7 @@ export function ReelModal({
           )}
         </button>
 
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: 16,
-            overflow: "hidden",
-            background: "#000",
-          }}
-        >
+        <div style={videoBoxStyle}>
           {reel.mainVideoUrl ? (
             <video
               ref={videoRef}

@@ -65,8 +65,8 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
     const origin =
       typeof window !== "undefined" ? window.location.origin : "https://YOUR_HOST";
     const id = `ar-embed-${slug}`;
-    return `<iframe id="${id}" src="${origin}/embed/${slug}" style="width:100%;border:0;display:block;height:0" loading="lazy" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
-<script>(function(){var f=document.getElementById('${id}');if(!f)return;var saved=null,htmlOverflow=null;function fullscreen(){if(saved!==null)return;saved=f.getAttribute('style')||'';htmlOverflow=document.documentElement.style.overflow;f.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;border:0;margin:0;padding:0;z-index:2147483647;background:transparent';document.documentElement.style.overflow='hidden';}function restore(){if(saved===null)return;f.setAttribute('style',saved);saved=null;document.documentElement.style.overflow=htmlOverflow||'';}window.addEventListener('message',function(e){if(!f||e.source!==f.contentWindow)return;var d=e.data||{};if(d.type==='ar:height'&&saved===null)f.style.height=d.height+'px';if(d.type==='ar:open')fullscreen();if(d.type==='ar:close')restore();});})();</script>`;
+    return `<iframe id="${id}" data-ansara-reels src="${origin}/embed/${slug}" style="width:100%;border:0;display:block;height:0" loading="lazy" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+<script>(function(){var f=document.getElementById('${id}');if(!f)return;var saved=null,htmlOverflow=null;function fullscreen(){if(saved!==null)return;saved=f.getAttribute('style')||'';htmlOverflow=document.documentElement.style.overflow;f.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;border:0;margin:0;padding:0;z-index:2147483647;background:transparent';document.documentElement.style.overflow='hidden';}function restore(){if(saved===null)return;f.setAttribute('style',saved);saved=null;document.documentElement.style.overflow=htmlOverflow||'';}window.addEventListener('message',function(e){if(!f||e.source!==f.contentWindow)return;var d=e.data||{};if(d.type==='ar:height'&&saved===null)f.style.height=d.height+'px';if(d.type==='ar:open')fullscreen();if(d.type==='ar:close')restore();});document.addEventListener('click',function(e){var t=e.target;if(!t||!t.closest)return;var b=t.closest('.reels-left, .reels-right');if(!b)return;e.preventDefault();var dir=b.classList.contains('reels-left')?'left':'right';var iframes=document.querySelectorAll('iframe[data-ansara-reels]');for(var i=0;i<iframes.length;i++){try{iframes[i].contentWindow.postMessage({type:'ar:nav',direction:dir},'*');}catch(err){}}});})();</script>`;
   }, [slug]);
 
   function update(patch: (prev: ProjectSettings) => ProjectSettings) {
@@ -519,6 +519,12 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           >
             {copied ? "Скопировано" : "Скопировать"}
           </IconButton>
+          <p className="text-xs text-icon mt-3 leading-relaxed">
+            Любым кнопкам/элементам на странице с классом{" "}
+            <code className="bg-surface px-1 rounded">reels-left</code> или{" "}
+            <code className="bg-surface px-1 rounded">reels-right</code> при
+            клике будут листать рилсы (на одну позицию).
+          </p>
         </Section>
       </div>
 
