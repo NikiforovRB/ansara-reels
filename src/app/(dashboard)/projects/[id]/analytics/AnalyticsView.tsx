@@ -10,7 +10,8 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { Calendar, Eye, MousePointerClick } from "lucide-react";
+import { Eye, MousePointerClick } from "lucide-react";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 
 type Preset = "today" | "7d" | "30d" | "all" | "custom";
 
@@ -76,10 +77,21 @@ export function AnalyticsView({ projectId }: { projectId: string }) {
     if (preset === "all") {
       return { from: undefined, to: undefined };
     }
-    return {
-      from: customFrom ? new Date(customFrom).toISOString() : undefined,
-      to: customTo ? new Date(`${customTo}T23:59:59.999Z`).toISOString() : undefined,
-    };
+    const fromIso = customFrom
+      ? (() => {
+          const d = new Date(customFrom);
+          d.setHours(0, 0, 0, 0);
+          return d.toISOString();
+        })()
+      : undefined;
+    const toIso = customTo
+      ? (() => {
+          const d = new Date(customTo);
+          d.setHours(23, 59, 59, 999);
+          return d.toISOString();
+        })()
+      : undefined;
+    return { from: fromIso, to: toIso };
   }, [preset, customFrom, customTo]);
 
   const load = useCallback(async () => {
@@ -125,19 +137,20 @@ export function AnalyticsView({ projectId }: { projectId: string }) {
         </PresetButton>
         {preset === "custom" && (
           <div className="flex items-center gap-2 ml-2">
-            <Calendar size={14} className="text-icon" />
-            <input
-              type="date"
-              value={customFrom}
-              onChange={(e) => setCustomFrom(e.target.value)}
-              className="h-8 px-2 rounded-md bg-surface text-sm"
+            <DateTimePicker
+              value={customFrom || null}
+              onChange={(v) => setCustomFrom(v ?? "")}
+              withTime={false}
+              placeholder="Дата с"
+              width={170}
             />
             <span className="text-icon text-sm">—</span>
-            <input
-              type="date"
-              value={customTo}
-              onChange={(e) => setCustomTo(e.target.value)}
-              className="h-8 px-2 rounded-md bg-surface text-sm"
+            <DateTimePicker
+              value={customTo || null}
+              onChange={(v) => setCustomTo(v ?? "")}
+              withTime={false}
+              placeholder="Дата по"
+              width={170}
             />
           </div>
         )}

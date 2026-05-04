@@ -16,6 +16,11 @@ const buttonSchema = z.object({
   widthMode: z.enum(["auto", "stretch"]).default("auto"),
 });
 
+const visibilityModeSchema = z.enum(["always", "end", "start", "range"]);
+const isoOrNull = z
+  .union([z.string().datetime({ offset: true }), z.null()])
+  .optional();
+
 const updateSchema = z.object({
   title: z.string().max(200).optional(),
   bgImageKey: z.string().nullable().optional(),
@@ -23,6 +28,9 @@ const updateSchema = z.object({
   mainVideoKey: z.string().nullable().optional(),
   button: buttonSchema.nullable().optional(),
   order: z.number().int().min(0).optional(),
+  visibilityMode: visibilityModeSchema.optional(),
+  startAt: isoOrNull,
+  endAt: isoOrNull,
 });
 
 interface Params {
@@ -64,6 +72,28 @@ export async function PATCH(req: Request, { params }: Params) {
   if (parsed.data.title !== undefined) data.title = parsed.data.title;
   if (parsed.data.order !== undefined) data.order = parsed.data.order;
   if (parsed.data.button !== undefined) data.button = parsed.data.button;
+  if (parsed.data.visibilityMode !== undefined) {
+    data.visibilityMode = parsed.data.visibilityMode;
+  }
+  if (parsed.data.startAt !== undefined) {
+    data.startAt = parsed.data.startAt ? new Date(parsed.data.startAt) : null;
+  }
+  if (parsed.data.endAt !== undefined) {
+    const endIso = parsed.data.endAt;
+    if (endIso) {
+      const end = new Date(endIso);
+      // Server-side guard: end date must be in the future at moment of save.
+      if (end.getTime() <= Date.now()) {
+        return NextResponse.json(
+          { error: "end_must_be_future" },
+          { status: 400 },
+        );
+      }
+      data.endAt = end;
+    } else {
+      data.endAt = null;
+    }
+  }
 
   for (const field of ["bgImageKey", "hoverVideoKey", "mainVideoKey"] as const) {
     if (parsed.data[field] !== undefined) {

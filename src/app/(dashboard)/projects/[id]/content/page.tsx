@@ -31,6 +31,10 @@ export default async function ContentPage({ params }: Props) {
     hoverVideoUrl: urlForKey(reel.hoverVideoKey),
     mainVideoUrl: urlForKey(reel.mainVideoKey),
     button: (reel.button as ButtonSettings | null) ?? null,
+    visibilityMode:
+      (reel.visibilityMode as "always" | "end" | "start" | "range") ?? "always",
+    startAt: reel.startAt ? reel.startAt.toISOString() : null,
+    endAt: reel.endAt ? reel.endAt.toISOString() : null,
   }));
 
   return (

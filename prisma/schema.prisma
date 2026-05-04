@@ -43,6 +43,10 @@ model Reel {
   hoverVideoKey   String?
   mainVideoKey    String?
   button          Json?
+  visibilityMode  String   @default("always")
+  startAt         DateTime?
+  endAt           DateTime?
+  promotedAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
