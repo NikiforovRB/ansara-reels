@@ -121,7 +121,7 @@ export function ReelModal({
   const frameStyle: React.CSSProperties = isMobile
     ? {
         width: "100vw",
-        height: "100vh",
+        height: "100dvh",
         background: "transparent",
         position: "relative",
       }
@@ -334,7 +334,9 @@ export function ReelModal({
               }}
               style={{
                 position: "absolute",
-                bottom: "20px",
+                bottom: isMobile
+                  ? "calc(env(safe-area-inset-bottom, 0px) + 30px)"
+                  : "20px",
                 zIndex: 40,
                 display: "inline-flex",
                 alignItems: "center",
