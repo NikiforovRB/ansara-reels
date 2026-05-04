@@ -35,6 +35,7 @@ export function ReelModal({
   const [progress, setProgress] = useState(0);
   const [muted, setMuted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [vh, setVh] = useState(0);
 
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < total - 1;
@@ -46,6 +47,29 @@ export function ReelModal({
     update();
     mql.addEventListener("change", update);
     return () => mql.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    const update = () => {
+      setVh(vv ? vv.height : window.innerHeight);
+    };
+    update();
+    if (vv) {
+      vv.addEventListener("resize", update);
+      vv.addEventListener("scroll", update);
+    } else {
+      window.addEventListener("resize", update);
+    }
+    return () => {
+      if (vv) {
+        vv.removeEventListener("resize", update);
+        vv.removeEventListener("scroll", update);
+      } else {
+        window.removeEventListener("resize", update);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -118,10 +142,21 @@ export function ReelModal({
 
   const opacity = Math.max(0, Math.min(100, settings.modal.backdropOpacity)) / 100;
 
+  const mobileH = vh > 0 ? `${vh}px` : "100dvh";
+
+  const overlayStyle: React.CSSProperties = isMobile
+    ? {
+        background: `rgba(0, 0, 0, ${opacity})`,
+        height: mobileH,
+        maxHeight: mobileH,
+      }
+    : { background: `rgba(0, 0, 0, ${opacity})` };
+
   const frameStyle: React.CSSProperties = isMobile
     ? {
         width: "100vw",
-        height: "100dvh",
+        height: mobileH,
+        maxHeight: mobileH,
         background: "transparent",
         position: "relative",
       }
@@ -198,7 +233,7 @@ export function ReelModal({
   return (
     <div
       className="fixed inset-0 z-[1000] flex items-center justify-center"
-      style={{ background: `rgba(0, 0, 0, ${opacity})` }}
+      style={overlayStyle}
       onClick={onClose}
     >
       <div onClick={(e) => e.stopPropagation()} style={frameStyle}>
@@ -322,54 +357,58 @@ export function ReelModal({
             }}
           />
 
-          {/* Button overlaid on video */}
-          {showButton && (
-            <a
-              href={button.url || "#"}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => {
-                e.stopPropagation();
-                onButtonClick();
-              }}
-              style={{
-                position: "absolute",
-                bottom: isMobile
-                  ? "calc(env(safe-area-inset-bottom, 0px) + 30px)"
-                  : "20px",
-                zIndex: 40,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "10px 18px",
-                fontSize: `${button.fontSize}px`,
-                color: button.textColor,
-                background: button.bgColor,
-                borderRadius: `${button.radius}px`,
-                transition: "background-color 200ms",
-                textDecoration: "none",
-                whiteSpace: stretched ? "normal" : "nowrap",
-                ...(stretched
-                  ? { left: "20px", right: "20px", textAlign: "center" }
-                  : {
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      maxWidth: "calc(100% - 40px)",
-                    }),
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  button.bgHoverColor;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  button.bgColor;
-              }}
-            >
-              {button.text}
-            </a>
-          )}
         </div>
+
+        {/* Reel button: rendered as a sibling of the videoBox so it always
+            stays anchored to the visible bottom of the modal frame and never
+            gets clipped by the video container's overflow on mobile. */}
+        {showButton && (
+          <a
+            href={button.url || "#"}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+              onButtonClick();
+            }}
+            style={{
+              position: "absolute",
+              bottom: isMobile
+                ? "calc(env(safe-area-inset-bottom, 0px) + 30px)"
+                : "20px",
+              zIndex: 60,
+              pointerEvents: "auto",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "10px 18px",
+              fontSize: `${button.fontSize}px`,
+              color: button.textColor,
+              background: button.bgColor,
+              borderRadius: `${button.radius}px`,
+              transition: "background-color 200ms",
+              textDecoration: "none",
+              whiteSpace: stretched ? "normal" : "nowrap",
+              ...(stretched
+                ? { left: "20px", right: "20px", textAlign: "center" }
+                : {
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    maxWidth: "calc(100% - 40px)",
+                  }),
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background =
+                button.bgHoverColor;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background =
+                button.bgColor;
+            }}
+          >
+            {button.text}
+          </a>
+        )}
       </div>
     </div>
   );
