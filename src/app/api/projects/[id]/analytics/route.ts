@@ -51,6 +51,7 @@ export async function GET(req: Request, { params }: Params) {
     select: {
       id: true,
       title: true,
+      subtitle: true,
       order: true,
       _count: {
         select: {
@@ -77,6 +78,7 @@ export async function GET(req: Request, { params }: Params) {
     reels: reels.map((r) => ({
       id: r.id,
       title: r.title,
+      subtitle: r.subtitle,
       order: r.order,
       views: r._count.views,
       clicks: r._count.clicks,

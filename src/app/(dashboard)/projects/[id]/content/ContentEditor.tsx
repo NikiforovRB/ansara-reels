@@ -25,6 +25,7 @@ export interface EditorReel {
   id: string;
   order: number;
   title: string;
+  subtitle: string;
   bgImageKey: string | null;
   hoverVideoKey: string | null;
   mainVideoKey: string | null;
@@ -46,6 +47,7 @@ interface Props {
 function reelEditableSnapshot(reel: EditorReel) {
   return {
     title: reel.title,
+    subtitle: reel.subtitle,
     bgImageKey: reel.bgImageKey,
     hoverVideoKey: reel.hoverVideoKey,
     mainVideoKey: reel.mainVideoKey,
@@ -101,6 +103,7 @@ export function ContentEditor({ projectId, initialReels, defaultButton }: Props)
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: r.title,
+            subtitle: r.subtitle,
             bgImageKey: r.bgImageKey,
             hoverVideoKey: r.hoverVideoKey,
             mainVideoKey: r.mainVideoKey,
@@ -127,6 +130,7 @@ export function ContentEditor({ projectId, initialReels, defaultButton }: Props)
     const { reel } = (await res.json()) as { reel: EditorReel };
     const newReel: EditorReel = {
       ...reel,
+      subtitle: reel.subtitle ?? "",
       bgImageUrl: null,
       hoverVideoUrl: null,
       mainVideoUrl: null,
@@ -521,6 +525,13 @@ function ReelsGroup({
                       updateReel(reel.id, { title: e.target.value })
                     }
                   />
+                  <TextField
+                    label="Подзаголовок (необязательно)"
+                    value={reel.subtitle}
+                    onChange={(e) =>
+                      updateReel(reel.id, { subtitle: e.target.value })
+                    }
+                  />
                   <VisibilityEditor
                     reel={reel}
                     onModeChange={(m) => setVisibilityMode(reel, m)}
@@ -684,10 +695,19 @@ function CollapsedHeader({
           {meta && <> · {meta}</>}
         </div>
         <div className="text-[14px] truncate">
-          {reel.title.trim() || (
+          {reel.title.trim() ? (
+            reel.title
+          ) : reel.subtitle.trim() ? (
+            reel.subtitle
+          ) : (
             <span className="text-icon">Без заголовка</span>
           )}
         </div>
+        {reel.title.trim().length > 0 && reel.subtitle.trim().length > 0 && (
+          <div className="text-[12px] text-icon truncate mt-0.5">
+            {reel.subtitle}
+          </div>
+        )}
       </div>
     </div>
   );

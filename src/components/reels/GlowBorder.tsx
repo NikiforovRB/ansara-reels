@@ -28,7 +28,8 @@ export function GlowBorder({ settings, unread }: Props) {
   const { border, reel } = settings;
   const baseColor = unread ? border.unreadColor : border.readColor;
   const secondColor = border.glowSecondColor || baseColor;
-  const radius = reel.radius === "full" ? "9999px" : `${reel.radius}px`;
+  const radius =
+    reel.borderRadius === "full" ? "9999px" : `${reel.borderRadius}px`;
   const offset = -border.gap;
   const borderWidth = border.width;
   const duration = `${Math.max(0.2, border.glowDurationSec)}s`;

@@ -73,8 +73,8 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
     setSettings(patch);
   }
 
-  const isRect = settings.reel.radius !== "full";
-  const glowOptions = isRect
+  const borderIsRect = settings.reel.borderRadius !== "full";
+  const glowOptions = borderIsRect
     ? GLOW_OPTIONS.filter((o) => o.value !== "rotate" && o.value !== "spin")
     : GLOW_OPTIONS;
 
@@ -123,12 +123,40 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
 
         <Section title="Размеры рилса">
           <SegmentedRow
-            label="Скругление"
+            label="Скругление медиа (фото / видео)"
             options={[
               { value: "num", label: "Прямоугольник" },
               { value: "full", label: "Круг" },
             ]}
-            value={settings.reel.radius === "full" ? "full" : "num"}
+            value={settings.reel.mediaRadius === "full" ? "full" : "num"}
+            onChange={(v) =>
+              update((p) => ({
+                ...p,
+                reel: {
+                  ...p.reel,
+                  mediaRadius: v === "num" ? 16 : "full",
+                },
+              }))
+            }
+          />
+          {settings.reel.mediaRadius !== "full" && (
+            <NumberRow
+              label="Радиус медиа (px)"
+              value={settings.reel.mediaRadius as number}
+              min={0}
+              max={40}
+              onChange={(v) =>
+                update((p) => ({ ...p, reel: { ...p.reel, mediaRadius: v } }))
+              }
+            />
+          )}
+          <SegmentedRow
+            label="Скругление обводки"
+            options={[
+              { value: "num", label: "Прямоугольник" },
+              { value: "full", label: "Круг" },
+            ]}
+            value={settings.reel.borderRadius === "full" ? "full" : "num"}
             onChange={(v) =>
               update((p) => {
                 const switchToRect = v === "num";
@@ -139,20 +167,23 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
                     : p.border.glow;
                 return {
                   ...p,
-                  reel: { ...p.reel, radius: switchToRect ? 16 : "full" },
+                  reel: {
+                    ...p.reel,
+                    borderRadius: switchToRect ? 16 : "full",
+                  },
                   border: { ...p.border, glow },
                 };
               })
             }
           />
-          {settings.reel.radius !== "full" && (
+          {settings.reel.borderRadius !== "full" && (
             <NumberRow
-              label="Скругление (px)"
-              value={settings.reel.radius as number}
+              label="Радиус обводки (px)"
+              value={settings.reel.borderRadius as number}
               min={0}
               max={40}
               onChange={(v) =>
-                update((p) => ({ ...p, reel: { ...p.reel, radius: v } }))
+                update((p) => ({ ...p, reel: { ...p.reel, borderRadius: v } }))
               }
             />
           )}
@@ -169,7 +200,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
                 }))
               }
             />
-            {settings.reel.radius !== "full" && (
+            {settings.reel.mediaRadius !== "full" && (
               <NumberRow
                 label="Высота (desktop)"
                 value={settings.reel.desktop.height}
@@ -195,7 +226,7 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
                 }))
               }
             />
-            {settings.reel.radius !== "full" && (
+            {settings.reel.mediaRadius !== "full" && (
               <NumberRow
                 label="Высота (mobile)"
                 value={settings.reel.mobile.height}
@@ -365,6 +396,47 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
           />
         </Section>
 
+        <Section title="Подзаголовок под рилсом">
+          <p className="text-[11px] text-icon leading-relaxed -mt-1 mb-1">
+            Текст подзаголовка задаётся у каждого рилса в редакторе контента.
+            Шрифт и выравнивание совпадают с заголовком.
+          </p>
+          <NumberRow
+            label="Размер текста (desktop, px)"
+            value={settings.subtitle.sizeDesktop}
+            min={8}
+            max={40}
+            onChange={(v) =>
+              update((p) => ({
+                ...p,
+                subtitle: { ...p.subtitle, sizeDesktop: v },
+              }))
+            }
+          />
+          <NumberRow
+            label="Размер текста (mobile, px)"
+            value={settings.subtitle.sizeMobile}
+            min={8}
+            max={40}
+            onChange={(v) =>
+              update((p) => ({
+                ...p,
+                subtitle: { ...p.subtitle, sizeMobile: v },
+              }))
+            }
+          />
+          <ColorRow
+            label="Цвет текста подзаголовка"
+            value={settings.subtitle.color}
+            onChange={(v) =>
+              update((p) => ({
+                ...p,
+                subtitle: { ...p.subtitle, color: v },
+              }))
+            }
+          />
+        </Section>
+
         <Section title="Расположение текста">
           <SegmentedRow
             label="Положение текста"
@@ -377,6 +449,30 @@ export function SettingsEditor({ projectId, slug, initialSettings, reels }: Prop
               update((p) => ({
                 ...p,
                 title: { ...p.title, position: v as TitlePosition },
+              }))
+            }
+          />
+          <NumberRow
+            label="Расстояние от рилса до текста (desktop, px)"
+            value={settings.title.spacingFromReelDesktop}
+            min={0}
+            max={80}
+            onChange={(v) =>
+              update((p) => ({
+                ...p,
+                title: { ...p.title, spacingFromReelDesktop: v },
+              }))
+            }
+          />
+          <NumberRow
+            label="Расстояние от рилса до текста (mobile, px)"
+            value={settings.title.spacingFromReelMobile}
+            min={0}
+            max={80}
+            onChange={(v) =>
+              update((p) => ({
+                ...p,
+                title: { ...p.title, spacingFromReelMobile: v },
               }))
             }
           />

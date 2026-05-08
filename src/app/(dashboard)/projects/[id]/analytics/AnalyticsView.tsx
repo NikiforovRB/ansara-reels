@@ -18,6 +18,7 @@ type Preset = "today" | "7d" | "30d" | "all" | "custom";
 interface ReelMetric {
   id: string;
   title: string;
+  subtitle: string;
   order: number;
   views: number;
   clicks: number;
@@ -224,8 +225,15 @@ export function AnalyticsView({ projectId }: { projectId: string }) {
             key={reel.id}
             className="grid grid-cols-[1fr_120px_120px] px-4 py-3 border-t border-white/0 hover:bg-[#eceef2] transition-colors"
           >
-            <span className="truncate text-sm">
-              {reel.title || `Рилс #${idx + 1}`}
+            <span className="min-w-0">
+              <span className="block truncate text-sm">
+                {reel.title || `Рилс #${idx + 1}`}
+              </span>
+              {reel.subtitle?.trim() && (
+                <span className="block truncate text-xs text-icon mt-0.5">
+                  {reel.subtitle}
+                </span>
+              )}
             </span>
             <span className="text-right text-sm">{reel.views}</span>
             <span className="text-right text-sm">{reel.clicks}</span>

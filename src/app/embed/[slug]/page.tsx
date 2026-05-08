@@ -49,6 +49,7 @@ export default async function EmbedPage({ params }: Props) {
     .map((reel) => ({
       id: reel.id,
       title: reel.title,
+      subtitle: reel.subtitle ?? "",
       bgImageUrl: urlForKey(reel.bgImageKey),
       hoverVideoUrl: urlForKey(reel.hoverVideoKey),
       mainVideoUrl: urlForKey(reel.mainVideoKey),

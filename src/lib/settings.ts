@@ -36,7 +36,10 @@ export interface ProjectSettings {
     mobileLeftOffset: number;
   };
   reel: {
-    radius: Radius;
+    /** Clip radius for image / hover video / card mask. */
+    mediaRadius: Radius;
+    /** Border / glow outline radius (can differ from media). */
+    borderRadius: Radius;
     desktop: { width: number; height: number };
     mobile: { width: number; height: number };
   };
@@ -60,6 +63,15 @@ export interface ProjectSettings {
     align: TitleAlign;
     fontFamily: string;
     customFontUrl?: string | null;
+    sizeDesktop: number;
+    sizeMobile: number;
+    color: string;
+    /** Gap between the reel card and the title block (px). */
+    spacingFromReelDesktop: number;
+    spacingFromReelMobile: number;
+  };
+  /** Styling for optional per-reel subtitle (shares font + alignment with title). */
+  subtitle: {
     sizeDesktop: number;
     sizeMobile: number;
     color: string;
@@ -91,7 +103,8 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
     mobileLeftOffset: 16,
   },
   reel: {
-    radius: 16,
+    mediaRadius: 16,
+    borderRadius: 16,
     desktop: { width: 160, height: 240 },
     mobile: { width: 110, height: 170 },
   },
@@ -118,6 +131,13 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
     sizeDesktop: 14,
     sizeMobile: 12,
     color: "#0f1115",
+    spacingFromReelDesktop: 8,
+    spacingFromReelMobile: 8,
+  },
+  subtitle: {
+    sizeDesktop: 12,
+    sizeMobile: 11,
+    color: "#71747d",
   },
   layout: "wrap",
   gap: { desktop: 16, mobile: 12 },
@@ -128,23 +148,37 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
 
 export function mergeSettings(base: unknown): ProjectSettings {
   const incoming = (base ?? {}) as Partial<ProjectSettings>;
+  const rawReel = (incoming.reel ?? {}) as Partial<ProjectSettings["reel"]> & {
+    radius?: Radius;
+  };
+  const legacyRadius = rawReel.radius;
   return {
     section: { ...DEFAULT_SETTINGS.section, ...(incoming.section ?? {}) },
     reel: {
-      ...DEFAULT_SETTINGS.reel,
-      ...(incoming.reel ?? {}),
+      mediaRadius:
+        rawReel.mediaRadius ??
+        legacyRadius ??
+        DEFAULT_SETTINGS.reel.mediaRadius,
+      borderRadius:
+        rawReel.borderRadius ??
+        legacyRadius ??
+        DEFAULT_SETTINGS.reel.borderRadius,
       desktop: {
         ...DEFAULT_SETTINGS.reel.desktop,
-        ...(incoming.reel?.desktop ?? {}),
+        ...(rawReel.desktop ?? {}),
       },
       mobile: {
         ...DEFAULT_SETTINGS.reel.mobile,
-        ...(incoming.reel?.mobile ?? {}),
+        ...(rawReel.mobile ?? {}),
       },
     },
     border: { ...DEFAULT_SETTINGS.border, ...(incoming.border ?? {}) },
     modal: { ...DEFAULT_SETTINGS.modal, ...(incoming.modal ?? {}) },
     title: { ...DEFAULT_SETTINGS.title, ...(incoming.title ?? {}) },
+    subtitle: {
+      ...DEFAULT_SETTINGS.subtitle,
+      ...(incoming.subtitle ?? {}),
+    },
     layout: incoming.layout ?? DEFAULT_SETTINGS.layout,
     gap: {
       ...DEFAULT_SETTINGS.gap,

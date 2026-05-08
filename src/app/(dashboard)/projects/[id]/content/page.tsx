@@ -24,6 +24,7 @@ export default async function ContentPage({ params }: Props) {
     id: reel.id,
     order: reel.order,
     title: reel.title,
+    subtitle: reel.subtitle ?? "",
     bgImageKey: reel.bgImageKey ?? null,
     hoverVideoKey: reel.hoverVideoKey ?? null,
     mainVideoKey: reel.mainVideoKey ?? null,

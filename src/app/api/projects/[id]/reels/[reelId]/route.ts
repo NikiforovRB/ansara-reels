@@ -23,6 +23,7 @@ const isoOrNull = z
 
 const updateSchema = z.object({
   title: z.string().max(200).optional(),
+  subtitle: z.string().max(500).optional(),
   bgImageKey: z.string().nullable().optional(),
   hoverVideoKey: z.string().nullable().optional(),
   mainVideoKey: z.string().nullable().optional(),
@@ -70,6 +71,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const data: Record<string, unknown> = {};
   if (parsed.data.title !== undefined) data.title = parsed.data.title;
+  if (parsed.data.subtitle !== undefined) data.subtitle = parsed.data.subtitle;
   if (parsed.data.order !== undefined) data.order = parsed.data.order;
   if (parsed.data.button !== undefined) data.button = parsed.data.button;
   if (parsed.data.visibilityMode !== undefined) {

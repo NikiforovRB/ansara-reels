@@ -7,6 +7,7 @@ import { GlowBorder } from "./GlowBorder";
 export interface PublicReel {
   id: string;
   title: string;
+  subtitle: string;
   bgImageUrl: string | null;
   hoverVideoUrl: string | null;
   mainVideoUrl: string | null;
@@ -56,19 +57,30 @@ export function ReelCard({
     }
   }, [playing, alwaysPlayHover, reel.hoverVideoUrl]);
 
-  const isFull = settings.reel.radius === "full";
+  const isFull = settings.reel.mediaRadius === "full";
   const sizes = isMobile ? settings.reel.mobile : settings.reel.desktop;
   const width = sizes.width;
   const height = isFull ? sizes.width : sizes.height;
-  const radius = settings.reel.radius === "full" ? "9999px" : `${settings.reel.radius}px`;
+  const mediaRadius =
+    settings.reel.mediaRadius === "full"
+      ? "9999px"
+      : `${settings.reel.mediaRadius}px`;
   const titleSize = isMobile ? settings.title.sizeMobile : settings.title.sizeDesktop;
+  const subtitleSize = isMobile
+    ? settings.subtitle.sizeMobile
+    : settings.subtitle.sizeDesktop;
   const titleAlign = settings.title.align === "center" ? "center" : "left";
   const titlePosition = settings.title.position;
+  const spacingFromReel = isMobile
+    ? settings.title.spacingFromReelMobile
+    : settings.title.spacingFromReelDesktop;
+  const showTitleBlock =
+    (reel.title?.trim().length ?? 0) > 0 || (reel.subtitle?.trim().length ?? 0) > 0;
 
   const cardStyle: React.CSSProperties = {
     width: `${width}px`,
     height: `${height}px`,
-    borderRadius: radius,
+    borderRadius: mediaRadius,
     cursor: "pointer",
     position: "relative",
     background: "transparent",
@@ -78,26 +90,52 @@ export function ReelCard({
   const mediaStyle: React.CSSProperties = {
     position: "absolute",
     inset: 0,
-    borderRadius: radius,
+    borderRadius: mediaRadius,
     overflow: "hidden",
     background: "#000",
   };
 
-  const titleStyle: React.CSSProperties = {
+  const textBlockWidth =
+    titlePosition === "right" ? `${settings.title.rightWidth}px` : `${width}px`;
+
+  const titleLineStyle: React.CSSProperties = {
     fontFamily: settings.title.fontFamily,
     fontSize: `${titleSize}px`,
     color: settings.title.color,
     textAlign: titleAlign,
-    marginTop: titlePosition === "bottom" ? 8 : 0,
-    width: titlePosition === "right" ? `${settings.title.rightWidth}px` : `${width}px`,
     overflowWrap: "break-word",
     lineHeight: 1.25,
   };
 
+  const subtitleLineStyle: React.CSSProperties = {
+    fontFamily: settings.title.fontFamily,
+    fontSize: `${subtitleSize}px`,
+    color: settings.subtitle.color,
+    textAlign: titleAlign,
+    overflowWrap: "break-word",
+    lineHeight: 1.25,
+    marginTop: (reel.title?.trim().length ?? 0) > 0 ? 4 : 0,
+  };
+
+  const titleBlockStyle: React.CSSProperties = {
+    marginTop: titlePosition === "bottom" ? spacingFromReel : 0,
+    width: textBlockWidth,
+  };
+
   const wrapperStyle: React.CSSProperties =
     titlePosition === "right"
-      ? { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }
-      : { display: "flex", flexDirection: "column", alignItems: titleAlign === "center" ? "center" : "flex-start", flexShrink: 0 };
+      ? {
+          display: "flex",
+          alignItems: "center",
+          gap: spacingFromReel,
+          flexShrink: 0,
+        }
+      : {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: titleAlign === "center" ? "center" : "flex-start",
+          flexShrink: 0,
+        };
 
   return (
     <div style={wrapperStyle}>
@@ -153,11 +191,15 @@ export function ReelCard({
         </div>
         <GlowBorder settings={settings} unread={unread} />
       </div>
-      {reel.title && titlePosition !== "right" && (
-        <div style={titleStyle}>{reel.title}</div>
-      )}
-      {reel.title && titlePosition === "right" && (
-        <div style={titleStyle}>{reel.title}</div>
+      {showTitleBlock && (
+        <div style={titleBlockStyle}>
+          {(reel.title?.trim().length ?? 0) > 0 && (
+            <div style={titleLineStyle}>{reel.title}</div>
+          )}
+          {(reel.subtitle?.trim().length ?? 0) > 0 && (
+            <div style={subtitleLineStyle}>{reel.subtitle}</div>
+          )}
+        </div>
       )}
     </div>
   );

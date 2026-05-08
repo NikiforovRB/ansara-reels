@@ -39,6 +39,7 @@ model Reel {
   projectId       String
   order           Int      @default(0)
   title           String   @default("")
+  subtitle        String   @default("")
   bgImageKey      String?
   hoverVideoKey   String?
   mainVideoKey    String?
