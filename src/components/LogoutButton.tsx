@@ -9,7 +9,13 @@ export function LogoutButton() {
     <IconButton
       icon={LogOut}
       size="sm"
-      onClick={() => signOut({ callbackUrl: "/login" })}
+      onClick={() => {
+        const home =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/`
+            : "/";
+        void signOut({ callbackUrl: home });
+      }}
     >
       Выйти
     </IconButton>
