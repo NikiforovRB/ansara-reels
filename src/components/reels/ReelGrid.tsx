@@ -286,6 +286,8 @@ export function ReelGrid({
           onNext={() => handleNav(1)}
           onClose={() => setOpenIndex(null)}
           onButtonClick={() => trackClick(reels[openIndex].id)}
+          nextVideoUrl={reels[openIndex + 1]?.mainVideoUrl ?? null}
+          prevVideoUrl={reels[openIndex - 1]?.mainVideoUrl ?? null}
         />
       )}
     </section>

@@ -10,7 +10,9 @@ export default auth((req) => {
   const path = nextUrl.pathname;
 
   const isProtected =
-    path.startsWith("/dashboard") || path.startsWith("/projects");
+    path.startsWith("/dashboard") ||
+    path.startsWith("/projects") ||
+    path.startsWith("/superadmin");
   const isAuthPage = path === "/login" || path === "/register";
 
   if (isProtected && !isAuthed) {

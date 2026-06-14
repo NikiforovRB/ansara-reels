@@ -14,6 +14,9 @@ interface Props {
   onNext: () => void;
   onClose: () => void;
   onButtonClick: () => void;
+  /** Video URLs of the neighbouring reels, prefetched while watching. */
+  nextVideoUrl?: string | null;
+  prevVideoUrl?: string | null;
 }
 
 const CURSOR_RIGHT =
@@ -30,6 +33,8 @@ export function ReelModal({
   onNext,
   onClose,
   onButtonClick,
+  nextVideoUrl,
+  prevVideoUrl,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [progress, setProgress] = useState(0);
@@ -408,6 +413,27 @@ export function ReelModal({
           >
             {button.text}
           </a>
+        )}
+      </div>
+
+      {/* Off-screen preloaders: warm the browser cache for neighbouring reels
+          so navigating next/prev starts playing almost instantly. */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          opacity: 0,
+          overflow: "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        {nextVideoUrl && (
+          <video key={`pre-next-${nextVideoUrl}`} src={nextVideoUrl} preload="auto" muted playsInline />
+        )}
+        {prevVideoUrl && (
+          <video key={`pre-prev-${prevVideoUrl}`} src={prevVideoUrl} preload="auto" muted playsInline />
         )}
       </div>
     </div>

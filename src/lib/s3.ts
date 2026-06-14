@@ -83,6 +83,31 @@ export async function deletePrefix(prefix: string) {
   } while (token);
 }
 
+/**
+ * Lists every object under the given prefix and returns a map of
+ * key -> size in bytes. Paginated to cover buckets of any size.
+ */
+export async function listObjectSizes(
+  scopePrefix: string = prefix,
+): Promise<Map<string, number>> {
+  const sizes = new Map<string, number>();
+  let token: string | undefined;
+  do {
+    const list = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: scopePrefix,
+        ContinuationToken: token,
+      }),
+    );
+    for (const obj of list.Contents ?? []) {
+      if (obj.Key) sizes.set(obj.Key, obj.Size ?? 0);
+    }
+    token = list.IsTruncated ? list.NextContinuationToken : undefined;
+  } while (token);
+  return sizes;
+}
+
 export function buildKey(parts: {
   userId: string;
   projectId: string;

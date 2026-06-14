@@ -19,6 +19,31 @@ export function reelsCountLabel(n: number): string {
   return `${n} ${pluralRu(n, REELS_FORMS)}`;
 }
 
+export const VIDEO_FORMS: [string, string, string] = [
+  "видео",
+  "видео",
+  "видео",
+];
+
+export const PROJECT_FORMS: [string, string, string] = [
+  "проект",
+  "проекта",
+  "проектов",
+];
+
+/** Human-readable file size, e.g. 1.5 МБ, 820 КБ, 2.1 ГБ. */
+export function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return "0 Б";
+  const units = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
+  const i = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+  );
+  const value = bytes / Math.pow(1024, i);
+  const rounded = value >= 100 || i === 0 ? Math.round(value) : Math.round(value * 10) / 10;
+  return `${rounded} ${units[i]}`;
+}
+
 const RU_MONTHS_GENITIVE = [
   "января",
   "февраля",
